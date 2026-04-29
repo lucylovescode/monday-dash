@@ -1,0 +1,9 @@
+{
+  "name": "monday-dash",
+  "version": "1.0.0",
+  "description": "Trilogy Care task dashboard powered by Monday.com",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.0"
+  }
+}
