@@ -1,10 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/sync",
-      "schedule": "*/15 * * * *"
-    }
-  ],
   "rewrites": [
     { "source": "/login", "destination": "/login.html" }
   ]
