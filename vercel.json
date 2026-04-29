@@ -1,4 +1,7 @@
 {
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "installCommand": "npm install",
   "crons": [
     {
       "path": "/api/sync",
