@@ -479,7 +479,7 @@ function processItem(row) {
   const dueDate  = row.due_date    || '';
   const group    = row.group_title || '';
 
-  const isComplete = DONE_STATUSES.has(status.toLowerCase());
+  const isComplete = DONE_STATUSES.has(status.toLowerCase()) || group === 'Completed Tasks';
 
   let isOverdue = false, isDueToday = false, isDueThisWeek = false, daysOverdue = 0;
   if (dueDate && !isComplete) {
