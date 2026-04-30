@@ -518,7 +518,8 @@ function applyGlobalFilter() {
 
 function populateAssigneeFilter() {
   const saved = document.getElementById('globalAssignee').value;
-  const assignees = [...new Set(rawItems.map(r => r.group_title))].filter(g => g && !EXCLUDED_GROUPS.has(g)).sort();
+  const rows = activeBoard === 'all' ? rawItems : rawItems.filter(r => r.board_key === activeBoard);
+  const assignees = [...new Set(rows.map(r => r.group_title))].filter(g => g && !EXCLUDED_GROUPS.has(g)).sort();
   document.getElementById('globalAssignee').innerHTML =
     '<option value="">All Team Members</option>' +
     assignees.map(a => `<option value="${esc(a)}"${a===saved?' selected':''}>${esc(a)}</option>`).join('');
