@@ -76,15 +76,17 @@ async function initDB() {
       due_date    TEXT,
       task_type   TEXT,
       synced_at   TIMESTAMPTZ DEFAULT NOW()
-    );
-    ALTER TABLE monday_tasks ADD COLUMN IF NOT EXISTS task_type TEXT;
+    )
+  `);
+  await pool.query(`ALTER TABLE monday_tasks ADD COLUMN IF NOT EXISTS task_type TEXT`);
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS syncs (
       id           SERIAL PRIMARY KEY,
       started_at   TIMESTAMPTZ NOT NULL,
       completed_at TIMESTAMPTZ,
       item_count   INTEGER,
       error        TEXT
-    );
+    )
   `);
 }
 
