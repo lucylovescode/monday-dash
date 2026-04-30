@@ -4,7 +4,7 @@ const BOARDS = {
   icoo1: {
     id: '1946541891',
     activeGroups: [
-      'group_mm2kxhhf','group_mm2spj74','group_mm1gtwmy','group_mm1hkzm3','group_mm0djdxw',
+      'group_mm2spj74','group_mm1gtwmy','group_mm1hkzm3','group_mm0djdxw',
       'group_mkth6fvb','group_mkzt3j5e','group_mkztk3s9','group_mkznnygg','group_mm12k1mq',
       'group_mm2k19fd','group_mkrnarw7','group_mkrqt1ve','duplicate_of_new_person__2_mkn18v6e',
       'group_mm0rjy55','group_mm0re4z','group_mm07wvxc'
