@@ -587,9 +587,12 @@ function renderDashboard() {
 
   const withDates = allItems.filter(i => i.isComplete && i.createdAt && i.updatedAt);
   if (withDates.length) {
-    const avg = withDates.reduce((sum, i) => sum + Math.max(0, (new Date(i.updatedAt) - new Date(i.createdAt)) / 86400000), 0) / withDates.length;
+    const days = withDates.map(i => Math.max(0, (new Date(i.updatedAt) - new Date(i.createdAt)) / 86400000)).sort((a,b) => a-b);
+    const avg = days.reduce((s,v) => s+v, 0) / days.length;
+    const median = days.length % 2 === 0 ? (days[days.length/2-1] + days[days.length/2]) / 2 : days[Math.floor(days.length/2)];
+    const p75 = days[Math.floor(days.length * 0.75)];
     setText('kpiAvgComplete', avg.toFixed(1) + 'd');
-    setText('kpiAvgCompleteSub', `based on ${withDates.length} completed`);
+    setText('kpiAvgCompleteSub', `Median ${median.toFixed(1)}d · P75 ${p75.toFixed(1)}d · n=${days.length}`);
   } else {
     setText('kpiAvgComplete', '—');
     setText('kpiAvgCompleteSub', 'no completed tasks');
