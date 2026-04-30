@@ -317,35 +317,35 @@
 
   <!-- KPIs -->
   <div class="kpi-grid">
-    <div class="kpi">
+    <div class="kpi kpi-clickable" onclick="openTasksModal('Active Tasks', i => !i.isComplete)">
       <div class="kpi-label">Active Tasks</div>
       <div class="kpi-value" id="kpiActive">—</div>
-      <div class="kpi-sub">not completed</div>
+      <div class="kpi-sub">click to view tasks</div>
     </div>
     <div class="kpi kpi-clickable" onclick="openOverdueModal()">
       <div class="kpi-label">Overdue</div>
       <div class="kpi-value red" id="kpiOverdue">—</div>
       <div class="kpi-sub">click to view tasks</div>
     </div>
-    <div class="kpi">
+    <div class="kpi kpi-clickable" onclick="openTasksModal('Due Today', i => !i.isComplete && i.isDueToday)">
       <div class="kpi-label">Due Today</div>
       <div class="kpi-value amber" id="kpiDueToday">—</div>
-      <div class="kpi-sub">needs attention</div>
+      <div class="kpi-sub">click to view tasks</div>
     </div>
-    <div class="kpi">
+    <div class="kpi kpi-clickable" onclick="openTasksModal('Due This Week', i => !i.isComplete && i.isDueThisWeek)">
       <div class="kpi-label">Due This Week</div>
       <div class="kpi-value" id="kpiDueWeek">—</div>
-      <div class="kpi-sub">next 7 days</div>
+      <div class="kpi-sub">click to view tasks</div>
     </div>
-    <div class="kpi">
+    <div class="kpi kpi-clickable" onclick="openTasksModal('No Due Date', i => !i.isComplete && !i.dueDate)">
       <div class="kpi-label">No Due Date</div>
       <div class="kpi-value" id="kpiNoDate">—</div>
-      <div class="kpi-sub">date not set</div>
+      <div class="kpi-sub">click to view tasks</div>
     </div>
-    <div class="kpi">
+    <div class="kpi kpi-clickable" onclick="openTasksModal('Critical Priority', i => !i.isComplete && i.priority === 'Critical ⚠️️')">
       <div class="kpi-label">Critical Priority</div>
       <div class="kpi-value red" id="kpiCritical">—</div>
-      <div class="kpi-sub">active &amp; unresolved</div>
+      <div class="kpi-sub">click to view tasks</div>
     </div>
   </div>
 
@@ -372,7 +372,7 @@
   <div class="card table-section">
     <div class="section-title">Task Type Breakdown</div>
     <div class="section-sub" id="taskTypeSub">Active tasks by type</div>
-    <div class="chart-wrap" style="height:200px"><canvas id="taskTypeChart"></canvas></div>
+    <div id="taskTypeWrap" class="chart-wrap" style="height:200px"><canvas id="taskTypeChart"></canvas></div>
   </div>
 
   <!-- Overdue tasks -->
@@ -398,7 +398,7 @@
   <div class="modal">
     <div class="modal-header">
       <div>
-        <div class="modal-title" style="color:#dc2626">⚠ Overdue Tasks</div>
+        <div class="modal-title" id="overdueModalTitle" style="color:#dc2626">⚠ Overdue Tasks</div>
         <div class="modal-sub" id="overdueModalSub"></div>
       </div>
       <button class="modal-close" onclick="closeOverdueModal()">✕</button>
@@ -683,6 +683,8 @@ function renderTaskTypeChart(items) {
   const data   = [...sorted.map(([,v]) => v), noType];
   const colors = [...CHART_COLORS.slice(0, sorted.length), '#cbd5e1'];
   setText('taskTypeSub', `${items.length} active tasks · ${sorted.length} type${sorted.length!==1?'s':''} · ${noType} with no type`);
+  const chartHeight = Math.max(200, (sorted.length + 1) * 32);
+  document.getElementById('taskTypeWrap').style.height = chartHeight + 'px';
   killChart('taskTypeChart');
   charts.taskTypeChart = new Chart(document.getElementById('taskTypeChart').getContext('2d'), {
     type: 'bar',
@@ -796,9 +798,29 @@ function showError(msg) {
 }
 function hideError() { document.getElementById('errorBanner').style.display = 'none'; }
 
+// ── Generic tasks modal ───────────────────────────────────────
+function openTasksModal(title, filterFn) {
+  const tasks = allItems.filter(filterFn).sort((a,b) => (b.daysOverdue||0)-(a.daysOverdue||0));
+  document.getElementById('overdueModalTitle').textContent = title;
+  setText('overdueModalSub', `${tasks.length} task${tasks.length!==1?'s':''}`);
+  document.getElementById('overdueModalBody').innerHTML = tasks.length ? `<table>
+    <thead><tr><th>Task</th><th>Team Member</th><th>Board</th><th>Due Date</th><th>Priority</th><th>Status</th></tr></thead>
+    <tbody>${tasks.map(t=>`<tr>
+      <td><div class="task-name-cell" title="${esc(t.name)}">${esc(t.name)}</div></td>
+      <td style="white-space:nowrap;font-weight:600">${esc(t.group)}</td>
+      <td>${boardBadge(t)}</td>
+      <td style="white-space:nowrap">${fmtDate(t.dueDate)||'—'}</td>
+      <td>${prioBadge(t.priority)}</td>
+      <td>${statBadge(t.status)}</td>
+    </tr>`).join('')}</tbody></table>`
+  : '<div class="empty"><div class="icon">✅</div><div class="msg">No tasks</div></div>';
+  document.getElementById('overdueModal').classList.add('open');
+}
+
 // ── Overdue modal ─────────────────────────────────────────────
 function openOverdueModal() {
   const tasks = allItems.filter(i => !i.isComplete && i.isOverdue).sort((a,b) => b.daysOverdue - a.daysOverdue);
+  document.getElementById('overdueModalTitle').textContent = '⚠ Overdue Tasks';
   setText('overdueModalSub', `${tasks.length} task${tasks.length!==1?'s':''} past their due date`);
   document.getElementById('overdueModalBody').innerHTML = tasks.length ? `<table>
     <thead><tr><th>Task</th><th>Team Member</th><th>Board</th><th>Due Date</th><th>Overdue By</th><th>Priority</th><th>Status</th></tr></thead>
