@@ -20,7 +20,7 @@ const BOARDS = {
   }
 };
 
-const F = `id name group{title} column_values(ids:["status","priority_Mjj6rOKH","date_Mjj8FZtc"]){id text}`;
+const F = `id name group{title} column_values(ids:["status","priority_Mjj6rOKH","date_Mjj8FZtc","dropdown_Mjj6ySAb"]){id text}`;
 
 async function mondayFetch(query, variables = {}) {
   const r = await fetch('https://api.monday.com/v2', {
@@ -74,8 +74,10 @@ async function initDB() {
       status      TEXT,
       priority    TEXT,
       due_date    TEXT,
+      task_type   TEXT,
       synced_at   TIMESTAMPTZ DEFAULT NOW()
     );
+    ALTER TABLE monday_tasks ADD COLUMN IF NOT EXISTS task_type TEXT;
     CREATE TABLE IF NOT EXISTS syncs (
       id           SERIAL PRIMARY KEY,
       started_at   TIMESTAMPTZ NOT NULL,
@@ -103,15 +105,15 @@ async function syncAll() {
       for (let i = 0; i < all.length; i += 500) {
         const chunk = all.slice(i, i + 500);
         const vals = chunk.map((_, idx) => {
-          const b = idx * 8;
-          return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8})`;
+          const b = idx * 9;
+          return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9})`;
         }).join(',');
         const params = chunk.flatMap(r => {
           const col = id => r.column_values.find(c => c.id === id)?.text ?? null;
-          return [r.id, r.name, r.group?.title??'', r.boardKey, col('status'), col('priority_Mjj6rOKH'), col('date_Mjj8FZtc')||null, now];
+          return [r.id, r.name, r.group?.title??'', r.boardKey, col('status'), col('priority_Mjj6rOKH'), col('date_Mjj8FZtc')||null, col('dropdown_Mjj6ySAb'), now];
         });
         await client.query(
-          `INSERT INTO monday_tasks(id,name,group_title,board_key,status,priority,due_date,synced_at) VALUES ${vals}`,
+          `INSERT INTO monday_tasks(id,name,group_title,board_key,status,priority,due_date,task_type,synced_at) VALUES ${vals}`,
           params
         );
       }
