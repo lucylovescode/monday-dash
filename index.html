@@ -514,10 +514,11 @@ function killChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[i
 function renderStatusChart(items) {
   const NAMED = ['New Task','Working On It','Attempted','Follow Up','HELP'];
   const namedCounts = NAMED.map(s => items.filter(i => i.status === s).length);
-  const otherCount  = items.filter(i => !NAMED.includes(i.status) && !DONE_STATUSES.has((i.status||'').toLowerCase())).length;
-  const labels = [...NAMED, 'Other'];
-  const data   = [...namedCounts, otherCount];
-  const colors = ['#2c4c79','#1EA99F','#ef4444','#f59e0b','#1e293b','#94a3b8'];
+  const noStatusCount = items.filter(i => !i.status || i.status.trim() === '').length;
+  const otherCount  = items.filter(i => i.status && i.status.trim() !== '' && !NAMED.includes(i.status) && !DONE_STATUSES.has((i.status||'').toLowerCase())).length;
+  const labels = [...NAMED, 'No Status', 'Other'];
+  const data   = [...namedCounts, noStatusCount, otherCount];
+  const colors = ['#2c4c79','#1EA99F','#ef4444','#f59e0b','#1e293b','#cbd5e1','#94a3b8'];
   killChart('statusChart');
   charts.statusChart = new Chart(document.getElementById('statusChart').getContext('2d'), {
     type: 'doughnut',
@@ -688,7 +689,7 @@ function hideError() { document.getElementById('errorBanner').style.display = 'n
 function openOtherModal() {
   const NAMED = ['New Task','Working On It','Attempted','Follow Up','HELP'];
   const tasks = allItems.filter(i =>
-    !i.isComplete && !NAMED.includes(i.status) && !DONE_STATUSES.has((i.status||'').toLowerCase())
+    !i.isComplete && i.status && i.status.trim() !== '' && !NAMED.includes(i.status) && !DONE_STATUSES.has((i.status||'').toLowerCase())
   );
 
   // Group by status
