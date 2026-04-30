@@ -7,7 +7,7 @@ const BOARDS = {
       'group_mm2spj74','group_mm1gtwmy','group_mm1hkzm3','group_mm0djdxw',
       'group_mkth6fvb','group_mkzt3j5e','group_mkztk3s9','group_mkznnygg','group_mm12k1mq',
       'group_mm2k19fd','group_mkrnarw7','group_mkrqt1ve','duplicate_of_new_person__2_mkn18v6e',
-      'group_mm0rjy55','group_mm0re4z','group_mm07wvxc'
+      'group_mm0rjy55','group_mm0re4z','group_mm07wvxc','new_group_mkkq401t'
     ]
   },
   icoo2: {
@@ -15,12 +15,12 @@ const BOARDS = {
     activeGroups: [
       'group_mm1df68','group_mm299c7c','new_group_mkkkvh9','group_mkzmq3rt','new_group_mkkkzs3a',
       'group_mkse6cd1','group_mkrnj7kf','group_mm0vgbkx','group_mm0vy62n','group_mm0asgwv',
-      'group_mm08qzsq','group_mm2mvnnf','group_mm2mrf2p'
+      'group_mm08qzsq','group_mm2mvnnf','group_mm2mrf2p','new_group_mkkq401t'
     ]
   }
 };
 
-const F = `id name group{title} column_values(ids:["status","priority_Mjj6rOKH","date_Mjj8FZtc","dropdown_Mjj6ySAb"]){id text}`;
+const F = `id name created_at updated_at group{title} column_values(ids:["status","priority_Mjj6rOKH","date_Mjj8FZtc","dropdown_Mjj6ySAb"]){id text}`;
 
 async function mondayFetch(query, variables = {}) {
   const r = await fetch('https://api.monday.com/v2', {
@@ -79,6 +79,8 @@ async function initDB() {
     )
   `);
   await pool.query(`ALTER TABLE monday_tasks ADD COLUMN IF NOT EXISTS task_type TEXT`);
+  await pool.query(`ALTER TABLE monday_tasks ADD COLUMN IF NOT EXISTS created_at TEXT`);
+  await pool.query(`ALTER TABLE monday_tasks ADD COLUMN IF NOT EXISTS updated_at TEXT`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS syncs (
       id           SERIAL PRIMARY KEY,
@@ -107,15 +109,15 @@ async function syncAll() {
       for (let i = 0; i < all.length; i += 500) {
         const chunk = all.slice(i, i + 500);
         const vals = chunk.map((_, idx) => {
-          const b = idx * 9;
-          return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9})`;
+          const b = idx * 11;
+          return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11})`;
         }).join(',');
         const params = chunk.flatMap(r => {
           const col = id => r.column_values.find(c => c.id === id)?.text ?? null;
-          return [r.id, r.name, r.group?.title??'', r.boardKey, col('status'), col('priority_Mjj6rOKH'), col('date_Mjj8FZtc')||null, col('dropdown_Mjj6ySAb'), now];
+          return [r.id, r.name, r.group?.title??'', r.boardKey, col('status'), col('priority_Mjj6rOKH'), col('date_Mjj8FZtc')||null, col('dropdown_Mjj6ySAb'), r.created_at||null, r.updated_at||null, now];
         });
         await client.query(
-          `INSERT INTO monday_tasks(id,name,group_title,board_key,status,priority,due_date,task_type,synced_at) VALUES ${vals}`,
+          `INSERT INTO monday_tasks(id,name,group_title,board_key,status,priority,due_date,task_type,created_at,updated_at,synced_at) VALUES ${vals}`,
           params
         );
       }

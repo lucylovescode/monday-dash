@@ -80,12 +80,10 @@
     /* ── KPI grid ── */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
       gap: 12px;
       margin-bottom: 20px;
     }
-    @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 640px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 
     .kpi {
       background: white; border-radius: 12px;
@@ -347,6 +345,11 @@
       <div class="kpi-value red" id="kpiCritical">—</div>
       <div class="kpi-sub">click to view tasks</div>
     </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Days to Complete</div>
+      <div class="kpi-value" id="kpiAvgComplete">—</div>
+      <div class="kpi-sub" id="kpiAvgCompleteSub">from creation to complete</div>
+    </div>
   </div>
 
   <!-- Charts -->
@@ -492,6 +495,7 @@ function processItem(row) {
     id: row.id, name: row.name, group, boardKey: row.board_key,
     short: board.short, color: board.color,
     status, priority, dueDate, taskType: row.task_type || '',
+    createdAt: row.created_at || '', updatedAt: row.updated_at || '',
     isComplete, isOverdue, isDueToday, isDueThisWeek, daysOverdue
   };
 }
@@ -580,6 +584,16 @@ function renderDashboard() {
   setText('kpiDueWeek',  week.length.toLocaleString());
   setText('kpiNoDate',   nodate.length.toLocaleString());
   setText('kpiCritical', critical.length.toLocaleString());
+
+  const withDates = allItems.filter(i => i.isComplete && i.createdAt && i.updatedAt);
+  if (withDates.length) {
+    const avg = withDates.reduce((sum, i) => sum + Math.max(0, (new Date(i.updatedAt) - new Date(i.createdAt)) / 86400000), 0) / withDates.length;
+    setText('kpiAvgComplete', avg.toFixed(1) + 'd');
+    setText('kpiAvgCompleteSub', `based on ${withDates.length} completed`);
+  } else {
+    setText('kpiAvgComplete', '—');
+    setText('kpiAvgCompleteSub', 'no completed tasks');
+  }
 
   populateAssigneeFilter();
   renderStatusChart(active);
