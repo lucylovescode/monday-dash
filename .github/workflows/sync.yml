@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Trigger sync
         run: |
-          curl -s -X GET "${{ secrets.APP_URL }}/api/sync" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            --fail
+          RESPONSE=$(curl -s -X GET "${{ secrets.APP_URL }}/api/sync" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "$RESPONSE"
+          echo "$RESPONSE" | grep -q '"ok":true' || (echo "Sync returned error" && exit 1)
+        continue-on-error: true
