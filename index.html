@@ -585,7 +585,21 @@ function renderDashboard() {
   setText('kpiNoDate',   nodate.length.toLocaleString());
   setText('kpiCritical', critical.length.toLocaleString());
 
-  const withDates = allItems.filter(i => i.status.toLowerCase() === 'complete' && i.createdAt && i.updatedAt && i.updatedAt !== i.createdAt);
+  // Detect clone date per board: the single day with a massive task creation spike
+  const cloneDates = {};
+  ['icoo1','icoo2'].forEach(bk => {
+    const counts = {};
+    rawItems.filter(r => r.board_key === bk && r.created_at).forEach(r => { const d = r.created_at.slice(0,10); counts[d] = (counts[d]||0)+1; });
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    if (sorted.length >= 2 && sorted[0][1] > sorted[1][1] * 5) cloneDates[bk] = sorted[0][0];
+  });
+
+  const withDates = allItems.filter(i => {
+    if (i.status.toLowerCase() !== 'complete') return false;
+    if (!i.createdAt || !i.updatedAt) return false;
+    if (cloneDates[i.boardKey] && i.createdAt.startsWith(cloneDates[i.boardKey])) return false;
+    return true;
+  });
   if (withDates.length) {
     const days = withDates.map(i => Math.max(0, (new Date(i.updatedAt) - new Date(i.createdAt)) / 86400000)).sort((a,b) => a-b);
     const avg = days.reduce((s,v) => s+v, 0) / days.length;
