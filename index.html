@@ -386,6 +386,7 @@
         <div class="sub" id="overdueSub">Tasks past their due date</div>
       </div>
       <div class="filter-row">
+        <select id="overdueTypeFilter" onchange="filterOverdue()"><option value="">All Task Types</option></select>
         <select id="overdueTeamFilter" onchange="filterOverdue()"><option value="">All Members</option></select>
         <select id="overduePrioFilter" onchange="filterOverdue()"><option value="">All Priorities</option></select>
       </div>
@@ -746,35 +747,41 @@ function renderTaskTypeChart(items) {
 
 // ── Filters ───────────────────────────────────────────────────
 function populateFilters(active) {
-  // Preserve current selections before rebuilding options
+  const savedTY = document.getElementById('overdueTypeFilter').value;
   const savedOT = document.getElementById('overdueTeamFilter').value;
   const savedOP = document.getElementById('overduePrioFilter').value;
 
+  const overdue = active.filter(i => i.isOverdue);
+  const types = [...new Set(overdue.map(i=>i.taskType))].filter(t=>t).sort();
   const teams = [...new Set(active.map(i=>i.group))].filter(g=>g&&!EXCLUDED_GROUPS.has(g)).sort();
   const prios = ['Critical ⚠️️','High','Medium','Low'].filter(p=>active.some(i=>i.priority===p));
 
+  const typeOpts = '<option value="">All Task Types</option>' + types.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
   const teamOpts = '<option value="">All Members</option>' + teams.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
   const prioOpts = '<option value="">All Priorities</option>' + prios.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
 
+  document.getElementById('overdueTypeFilter').innerHTML = typeOpts;
   document.getElementById('overdueTeamFilter').innerHTML = teamOpts;
   document.getElementById('overduePrioFilter').innerHTML = prioOpts;
 
-  // Restore selections if the option still exists in the new list
   const restore = (id, val) => {
     const el = document.getElementById(id);
     if (val && [...el.options].some(o => o.value === val)) el.value = val;
   };
+  restore('overdueTypeFilter', savedTY);
   restore('overdueTeamFilter', savedOT);
   restore('overduePrioFilter', savedOP);
 }
 
 // ── Overdue table ─────────────────────────────────────────────
 function filterOverdue() {
-  const tf = document.getElementById('overdueTeamFilter').value;
-  const pf = document.getElementById('overduePrioFilter').value;
+  const tyf = document.getElementById('overdueTypeFilter').value;
+  const tf  = document.getElementById('overdueTeamFilter').value;
+  const pf  = document.getElementById('overduePrioFilter').value;
   const od = allItems.filter(i=>!i.isComplete&&i.isOverdue).filter(i=>{
-    if (tf && i.group    !== tf) return false;
-    if (pf && i.priority !== pf) return false;
+    if (tyf && i.taskType !== tyf) return false;
+    if (tf  && i.group    !== tf)  return false;
+    if (pf  && i.priority !== pf)  return false;
     return true;
   });
   renderOverdueTable(od);
@@ -789,9 +796,10 @@ function renderOverdueTable(tasks) {
     return;
   }
   wrap.innerHTML = `<table>
-    <thead><tr><th>Task</th><th>Team Member</th><th>Board</th><th>Due Date</th><th>Overdue By</th><th>Priority</th><th>Status</th></tr></thead>
+    <thead><tr><th>Task</th><th>Task Type</th><th>Team Member</th><th>Board</th><th>Due Date</th><th>Overdue By</th><th>Priority</th><th>Status</th></tr></thead>
     <tbody>${sorted.map(t=>`<tr class="${rowAgeClass(t.daysOverdue)}">
       <td><div class="task-name-cell" title="${esc(t.name)}">${esc(t.name)}</div></td>
+      <td style="white-space:nowrap">${t.taskType ? `<span class="badge" style="background:#f1f5f9;color:#334155">${esc(t.taskType)}</span>` : '<span style="color:#94a3b8">—</span>'}</td>
       <td style="white-space:nowrap;font-weight:600">${esc(t.group)}</td>
       <td>${boardBadge(t)}</td>
       <td style="white-space:nowrap;color:#dc2626;font-weight:600">${fmtDate(t.dueDate)}</td>
